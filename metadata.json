@@ -1,0 +1,7 @@
+{
+  "name": "Serene Order",
+  "description": "An elegant event management system that transforms chaos into connection. Manage registrations, approve attendees with AI-crafted messages, and scan tickets seamlessly.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

@@ -3,13 +3,11 @@
 // ========================================================================
 
 import React, { useEffect } from 'react';
-// Herramientas para la navegación (enrutamiento) entre las distintas páginas de la aplicación.
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-// Librería de iconos visuales para la interfaz.
 import { QrCode, ShieldCheck, Scan, Menu, X, Ticket as TicketIcon, LogOut } from 'lucide-react';
 
 // --- Páginas de la Aplicación ---
-import Landing from './pages/Landing';
+// NOTA ACLARATORIA: Hemos eliminado la importación de 'Landing' porque ya no lo usaremos.
 import Admin from './pages/Admin';
 import Ticket from './pages/Ticket';
 import Scanner from './pages/Scanner';
@@ -17,43 +15,31 @@ import ComprarEntrada from './pages/ComprarEntrada.tsx';
 import Login from './pages/Login';
 
 // --- Lógica y Componentes Auxiliares ---
-import { seedData } from './services/storage'; // Función para cargar datos de ejemplo al inicio.
-import ProtectedRoute from './components/ProtectedRoute'; // El "portero" que protege las rutas de admin.
+import { seedData } from './services/storage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // ========================================================================
 // SECCIÓN 2: COMPONENTE LAYOUT (La "Plantilla" Visual de la App)
 // ========================================================================
-// Este componente define la estructura que se repite en todas las páginas: 
-// la barra de navegación, el pie de página y el contenedor para el contenido principal.
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
-  // --- SUB-SECCIÓN 2.1: LÓGICA DEL LAYOUT ---
-  
-  const location = useLocation(); // Hook que nos da información sobre la URL actual.
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false); // Estado para controlar el menú móvil.
-
-  // Función para determinar si un enlace del menú es el activo, para poder destacarlo visualmente.
+  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const isActive = (path: string) => location.pathname === path;
-
-  // Lógica de Autenticación: revisa si la "llave" de autenticación existe en el almacenamiento del navegador.
   const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-  // Lógica Condicional del Menú: decide qué enlaces mostrar basándose en si el usuario está autenticado o no.
+  // Lógica Condicional del Menú: Ahora más simple.
   const navItems = isAuthenticated
     ? [ // Si ESTÁ autenticado, muestra el menú de administrador.
         { path: '/gestion', label: 'Gestión', icon: <ShieldCheck size={20} /> },
         { path: '/escaner', label: 'Escáner', icon: <Scan size={20} /> },
       ]
-    : [ // Si NO está autenticado, muestra el menú para el público.
-        { path: '/comprar-entrada', label: 'Adquirí tu entrada', icon: <TicketIcon size={20} /> },
+    : [ // Si NO está autenticado, muestra solo el llamado a la acción principal.
+        { path: '/', label: 'Adquirí tu entrada', icon: <TicketIcon size={20} /> },
       ];
 
-  // --- SUB-SECCIÓN 2.2: ESTRUCTURA VISUAL (JSX) DEL LAYOUT ---
-  
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-
-      {/* --- Barra de Navegación (Header) --- */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -65,7 +51,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <span className="font-serif text-xl font-semibold text-slate-900 tracking-tight">CASONA SESSION</span>
             </Link>
 
-            {/* --- Menú de Escritorio (visible en pantallas grandes) --- */}
+            {/* --- Menú de Escritorio --- */}
             <div className="hidden md:flex items-center space-x-8">
               {navItems.map((item) => (
                 <Link
@@ -93,7 +79,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
             </div>
 
-            {/* --- Botón de Menú Móvil (visible en pantallas pequeñas) --- */}
+            {/* --- Botón de Menú Móvil --- */}
             <div className="md:hidden">
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-slate-400">
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -136,10 +122,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
       </nav>
 
-      {/* --- Contenido Principal de la Página --- */}
       <main className="flex-grow">{children}</main>
 
-      {/* --- Footer (Pie de página) --- */}
       <footer className="bg-white border-t border-slate-200 mt-auto">
         <div className="max-w-5xl mx-auto py-6 px-4 text-center">
           <p className="text-slate-400 text-sm">"La logística que agota se vuelve conexión que enriquece."</p>
@@ -152,13 +136,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 // ========================================================================
 // SECCIÓN 3: COMPONENTE PRINCIPAL APP (El "Cerebro" de la App)
 // ========================================================================
-// Este es el componente raíz que organiza todo el enrutamiento y la estructura.
 const App: React.FC = () => {
-  // useEffect se ejecuta solo una vez cuando la aplicación carga por primera vez.
   useEffect(() => {
-    // NOTA ACLARATORIA: Esta función 'seedData' llena la app con datos de ejemplo
-    // para que no empieces con la lista de gestión vacía. 
-    // En una aplicación real, probablemente quitarías esto.
     seedData(); 
   }, []);
 
@@ -166,12 +145,17 @@ const App: React.FC = () => {
     <HashRouter>
       <Layout>
         <Routes>
-          {/* --- Definición de Rutas Públicas (accesibles por todos) --- */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/comprar-entrada" element={<ComprarEntrada />} />
+          {/* --- Definición de Rutas Públicas --- */}
+          {/* NOTA ACLARATORIA: La ruta raíz "/" ahora muestra directamente el formulario de compra. */}
+          <Route path="/" element={<ComprarEntrada />} />
           <Route path="/login" element={<Login />} />
+          
+          {/* NOTA ACLARATORIA: Hemos eliminado la ruta duplicada "/comprar-entrada" por simplicidad. 
+              Si todavía quieres mantenerla, puedes volver a añadirla:
+              <Route path="/comprar-entrada" element={<ComprarEntrada />} /> 
+          */}
 
-          {/* --- Definición de Rutas Privadas (protegidas por contraseña) --- */}
+          {/* --- Definición de Rutas Privadas --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/gestion" element={<Admin />} />
             <Route path="/escaner" element={<Scanner />} />
@@ -186,5 +170,4 @@ const App: React.FC = () => {
 // ========================================================================
 // SECCIÓN 4: EXPORTACIÓN
 // ========================================================================
-// Hace que el componente 'App' esté disponible para ser usado por el resto de la aplicación.
 export default App;

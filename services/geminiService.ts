@@ -1,50 +1,87 @@
-import { GoogleGenAI } from "@google/genai";
+// ========================================================================
+// SECCIÓN 1: IMPORTACIÓN E INICIALIZACIÓN
+// ========================================================================
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Initialize Gemini AI
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// NOTA ACLARATORIA: Leemos la clave de API desde las variables de entorno.
+// Es CRUCIAL que se use 'import.meta.env' en proyectos con Vite para el código del lado del cliente.
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// Verificación de la clave de API.
+if (!apiKey) {
+  // Si la clave no se encuentra, lanzamos un error claro en la consola para facilitar la depuración.
+  throw new Error("VITE_GEMINI_API_KEY no está definida en el archivo .env.local");
+}
+
+// Creamos UNA ÚNICA INSTANCIA del cliente de Gemini que será usada por todas las funciones de este archivo.
+const genAI = new GoogleGenerativeAI(apiKey);
+
+
+// ========================================================================
+// SECCIÓN 2: FUNCIÓN PARA GENERAR MENSAJE DE BIENVENIDA
+// ========================================================================
 export const generatePoeticWelcome = async (name: string, eventName: string): Promise<string> => {
   try {
-    const model = 'gemini-2.5-flash';
+    // Obtenemos el modelo 'gemini-1.5-flash', que es rápido y eficiente para texto.
+      const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
     const prompt = `
-      Write a very short, poetic, and warm welcome email body (max 50 words) for an attendee named "${name}" 
-      who has been approved for the event "${eventName}". 
-      The tone should be serene, elegant, and welcoming. 
-      Do not include subject lines or headers. Just the message.
+      Escribe un cuerpo de email de bienvenida muy corto (máximo 50 palabras), poético y cálido para un asistente llamado "${name}" 
+      que ha sido aprobado para el evento "${eventName}".
+      El tono debe ser sereno, elegante y acogedor.
+      No incluyas asuntos ni encabezados. Solo el mensaje.
     `;
 
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: prompt,
-    });
+    // Generamos el contenido a partir del prompt.
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+    
+    // Si la API devuelve un texto, lo usamos. Si no, usamos un mensaje de respaldo.
+    return text || `Bienvenido/a, ${name}. Es un honor que te unas a nosotros.`;
 
-    return response.text || `Welcome, ${name}. We are honored to have you join us.`;
   } catch (error) {
+    // Si hay un error con la API (ej. clave incorrecta, cuota excedida), lo mostramos en la consola
+    // y devolvemos un mensaje de respaldo para que la aplicación no se rompa.
     console.error("Gemini API Error:", error);
-    return `Welcome, ${name}. We are delighted to confirm your attendance to ${eventName}.`;
+    return `¡Bienvenido/a, ${name}! Estamos encantados de confirmar tu asistencia a ${eventName}.`;
   }
 };
 
+
+// ========================================================================
+// SECCIÓN 3: FUNCIÓN PARA ANALIZAR COMPROBANTE (SIMULADA)
+// ========================================================================
+// NOTA ACLARATORIA: Esta función actualmente está SIMULADA para no gastar cuota de API en cada prueba.
+// En una implementación real, descomentarías el bloque de código que llama al modelo de visión.
 export const analyzePaymentProof = async (base64Image: string): Promise<boolean> => {
-  // Simulating a check on a receipt image using Gemini Vision
-  // In a real app, we would send the image to check for valid dates/amounts.
-  // For this demo, we just return true effectively, but showing the code structure.
   try {
-     // To minimize API usage in this demo context, we just simulate a delay.
-     // Real implementation:
-     /*
-     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-            parts: [
-                { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-                { text: "Is this a valid receipt or payment proof? Answer YES or NO." }
-            ]
-        }
-     });
-     */
+     // Simulación de un retraso de red para que parezca que está procesando.
      await new Promise(resolve => setTimeout(resolve, 1000));
      return true; 
-  } catch (e) {
-    return true;
+     
+     /*
+     // --- CÓDIGO REAL PARA USAR EL MODELO DE VISIÓN DE GEMINI ---
+     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-vision-latest" });
+     const prompt = "Is this a valid receipt or payment proof? Answer only with the word YES or NO.";
+     const imagePart = {
+       inlineData: {
+         data: base64Image,
+         mimeType: "image/jpeg", // Asegúrate de que el tipo MIME es correcto
+       },
+     };
+
+     const result = await model.generateContent([prompt, imagePart]);
+     const response = await result.response;
+     const text = response.text();
+
+     return text.trim().toUpperCase() === 'YES';
+     */
+
+  } catch (error) {
+    console.error("Error en el análisis de imagen con Gemini:", error);
+    // En caso de error, es más seguro asumir que el comprobante es válido para no bloquear al usuario.
+    // En una app real, podrías querer registrar este error para una revisión manual.
+    return true; 
   }
 }
